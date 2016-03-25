@@ -47,7 +47,7 @@ router.post('/login', function(req, res, next) {
                         }
                     });
             } else {
-                if (usr.length !== 1 || usrs[0].pwd !== usr.pwd) {
+                if (usrs.length !== 1 || usrs[0].pwd !== usr.pwd) {
                     return {
                         msg: 'invalid login info'
                     };
@@ -59,7 +59,7 @@ router.post('/login', function(req, res, next) {
         })
         .then(function(info) {
             if (info.usr) {
-                return new Promise(function(resolve, rejet) {;
+                return new Promise(function(resolve, reject) {;
                     req.session.usr = info.usr;
                     req.session.save(function(err) {
                         if (err) reject(err)

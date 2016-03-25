@@ -5,9 +5,10 @@ describe('test login api', function() {
     var host = process.env.HOST || 'localhost';
     var url = 'http://' + host + ':' + port + '/api/login';
     var parseCookie = function(response) {
+        if (!response) return;
         var cookie;
         response.headers['set-cookie'].forEach(function(item) {
-            if (item, startsWith('connect.sid'))
+            if (item.startsWith('connect.sid'))
                 cookie = item.split(';')[0];
         })
         return cookie;
@@ -20,6 +21,7 @@ describe('test login api', function() {
                 body: usr,
                 json: true
             }, function(err, response, body) {
+                login.cookie = parseCookie(response);
                 if (err) reject(err);
                 else resolve(body);
             });
@@ -81,9 +83,38 @@ describe('test login api', function() {
         login({
             usr: 'xyz'
         }).then(function(body) {
-            expect(body).toEqual({msg: 'usr or password is required'});;
+            expect(body).toEqual({
+                msg: 'usr or password is required'
+            });
         }, function(err) {
             expect(err).toBeNull();
         }).then(done).catch(console.log);
     });
+
+
+
+
+
+
+    it('check is login after login', function(done) {
+        login({
+                usr: 'xyz',
+                pwd: 'xyz'
+            })
+            .then(function() {
+                return new Promise(function(resolve, reject) {
+                    request({
+                        url: url,
+                        headers: {
+                            cookie: request.cookie(login.cookie)
+                        }
+                    }, function(err, response, body) {
+                        console.log(err, body);
+                        !!err && reject(err) || resolve(body);
+                    });
+                });
+            })
+            .then(done).catch(console.log);
+    });
+
 });

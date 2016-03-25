@@ -12,7 +12,7 @@ router.post('/login', function(req, res, next) {
     var usr = req.body;
     if (!usr || !usr.usr || !usr.pwd) {
         res.json({
-            msg: 'usr or password required'
+            msg: 'usr or password is required'
         });
         return;
     }

@@ -17,7 +17,7 @@ router.post('/login', function(req, res, next) {
         return;
     }
     //support signup and login
-    var isSignup = !!usr.singup;
+    var isSignup = !!usr.signup;
     delete usr.signup;
 
     //TODO, encrypt password

@@ -30,6 +30,7 @@ function parseLine(l, interview, interviews) {
 
 
 function parseFile(file, interviews) {
+    console.log('parse file', file);
     var interviews = [];
 
     return new Promise(function(resolve, reject) {

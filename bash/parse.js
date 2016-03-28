@@ -1,4 +1,6 @@
 var fs = require('fs');
+var _ = require('lodash');
+var Q = require('q');
 
 
 function parseLine(l, interview, interviews) {
@@ -55,30 +57,22 @@ function parseFile(file, interviews) {
 
 
 function parseDir(dir) {
-    var promises = [];
-    return new Promise(function(resolve, reject) {
-        fs.readdir(dir, function(err, files) {
-            console.log('read dir', err, files.length)
-            if (err) return;
-            files.forEach(function(file) {
+        return Q.nfcall(fs.readdir, dir).then(function(files) {
+            var promises = _.map(files, function(file) {
                 var filePath = dir + '/' + file;
                 var fsStat = fs.statSync(filePath);
-                if (fsStat.isDirectory()) promises.push(parseDir(filePath));
+                if (fsStat.isDirectory()) return parseDir(filePath);
                 else if (fsStat.isFile() && file.endsWith('.txt'))
-                    promises.push(parseFile(filePath));
+                    return parseFile(filePath);
                 else console.log('ignore', filePath);
             });
-            Promise.all(promises).then(function(interviewses){
-                var interviews = [];
-                interviewses.forEach(function(its){
-                    interviews = interviews.concat(its);
-                })
-                resolve(interviews);
-            })
-            console.log('read dir finish', dir);
+            return Promise.all(promises).then(function(interviewses){
+                console.log('finish parse file');
+                return _.reduce(interviewses, function(result, interviews){
+                    return result.concat(interviews);
+                }, []);
+            });
         });
-
-    })
 }
 
 module.exports = {

@@ -1,6 +1,6 @@
-var fs = require('fs');
+var Promise = require('bluebird');
+var fs = Promise.promisifyAll(require('fs'));
 var _ = require('lodash');
-var Q = require('q');
 
 
 function parseLine(l, interview, interviews) {
@@ -35,21 +35,14 @@ function parseFile(file, interviews) {
     console.log('parse file', file);
     var interviews = [];
 
-    return new Promise(function(resolve, reject) {
-        fs.readFile(file, 'utf8', function(err, cnt) {
-            console.log(err, cnt.length);
-            if (err) {
-                reject(err);
-                return;
-            }
-            var lines = cnt.split('\n');
-            var interview = {};
-            lines.forEach(function(l) {
-                interview = parseLine(l, interview, interviews);
-            });
-            if (!!interview.Client) interviews.push(interview);
-            resolve(interviews);
-        })
+    return fs.readFileAsync(file, 'utf8').then(function(cnt) {
+        var lines = cnt.split('\n');
+        var interview = {};
+        lines.forEach(function(l) {
+            interview = parseLine(l, interview, interviews);
+        });
+        if (!!interview.Client) interviews.push(interview);
+        return interviews;
 
     });
 
@@ -57,22 +50,22 @@ function parseFile(file, interviews) {
 
 
 function parseDir(dir) {
-        return Q.nfcall(fs.readdir, dir).then(function(files) {
-            var promises = _.map(files, function(file) {
-                var filePath = dir + '/' + file;
-                var fsStat = fs.statSync(filePath);
-                if (fsStat.isDirectory()) return parseDir(filePath);
-                else if (fsStat.isFile() && file.endsWith('.txt'))
-                    return parseFile(filePath);
-                else console.log('ignore', filePath);
-            });
-            return Promise.all(promises).then(function(interviewses){
-                console.log('finish parse file');
-                return _.reduce(interviewses, function(result, interviews){
-                    return result.concat(interviews);
-                }, []);
-            });
+    return fs.readdirAsync(dir).then(function(files) {
+        var promises = _.map(files, function(file) {
+            var filePath = dir + '/' + file;
+            var fsStat = fs.statSync(filePath);
+            if (fsStat.isDirectory()) return parseDir(filePath);
+            else if (fsStat.isFile() && file.endsWith('.txt'))
+                return parseFile(filePath);
+            else console.log('ignore', filePath);
         });
+        return Promise.all(promises).then(function(interviewses) {
+            console.log('finish parse file');
+            return _.reduce(interviewses, function(result, interviews) {
+                return result.concat(interviews);
+            }, []);
+        });
+    });
 }
 
 module.exports = {
